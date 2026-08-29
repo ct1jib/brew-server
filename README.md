@@ -1,6 +1,6 @@
 # brew-server
 
-Experimental Rust Brew core for linking two or more MidnightBlue BlueStation TETRA base stations.
+Experimental Rust Brew core for linking two or more MidnightBlue BlueStation or Flowstation TETRA base stations.
 
 Version 0.2 adds:
 
@@ -39,10 +39,10 @@ curl http://127.0.0.1:9000/healthz
 
 ```toml
 listen = "0.0.0.0:9000"
-websocket_path = "/brew"
+websocket_path = "/brew/"
 websocket_subprotocol = "brew"
-route_without_affiliations = false
-allow_multiple_calls_per_group = false
+route_without_affiliations = true
+allow_multiple_calls_per_group = true
 higher_priority_number_wins = true
 preempt_cause = 1
 
@@ -62,13 +62,11 @@ Use a different username/password for each BlueStation. The username is only an 
 
 Configure each BlueStation's Brew transport to point at the server host/port, use endpoint `/brew` (or `/brew/`), subprotocol `brew`, and set the matching Digest username/password. With Digest credentials configured, current BlueStation performs:
 
-1. `GET /brew` without credentials.
+1. `GET /brew/` without credentials.
 2. Server returns `401` with a Digest challenge.
 3. BlueStation retries with `Authorization: Digest ...`.
 4. Server returns a one-time path such as `/brew/session/<token>`.
 5. BlueStation upgrades that path to WebSocket with subprotocol `brew`.
-
-When `[auth].enabled = false`, direct WebSocket upgrade at `/brew` is allowed for lab testing.
 
 ## SDS routing
 
