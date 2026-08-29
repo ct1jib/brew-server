@@ -1,0 +1,17 @@
+listen = "0.0.0.0:9000"
+websocket_path = "/brew"
+websocket_subprotocol = "brew"
+route_without_affiliations = false
+fallback_broadcast_when_no_affiliations = true
+allow_multiple_calls_per_group = false
+higher_priority_number_wins = true
+preempt_cause = 1
+
+[auth]
+enabled = true
+realm = "brew-server"
+session_ttl_seconds = 300
+
+[auth.users]
+"100000001" = "change-me-bs1"
+"100000002" = "change-me-bs2"

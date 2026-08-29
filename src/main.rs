@@ -1,0 +1,23 @@
+mod config;
+mod dashboard;
+mod monitor;
+mod protocol;
+mod router;
+mod server;
+mod state;
+
+use config::Config;
+use state::AppState;
+use std::sync::Arc;
+use tracing_subscriber::EnvFilter;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| "brew_server=info".into()))
+        .init();
+
+    let path = std::env::args().nth(1).unwrap_or_else(|| "brew-server.toml".to_owned());
+    let config = Config::load(&path)?;
+    server::run(Arc::new(AppState::new(config))).await
+}

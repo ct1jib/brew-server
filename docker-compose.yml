@@ -1,0 +1,10 @@
+services:
+  brew-server:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./brew-server.toml:/etc/brew-server.toml:ro
+    environment:
+      RUST_LOG: brew_server=info
