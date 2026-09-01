@@ -1,4 +1,5 @@
 use crate::{dashboard, router, state::{AppState, Client}};
+use anyhow::Context;
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
@@ -29,9 +30,29 @@ pub async fn run(state: Arc<AppState>) -> anyhow::Result<()> {
         .route("/api/live", get(dashboard::live))
         .with_state(state.clone());
 
-    let listener = tokio::net::TcpListener::bind(state.config.listen).await?;
-    info!(listen=%state.config.listen, websocket_path=%base, auth=state.config.auth.enabled, "Brew server listening");
-    axum::serve(listener, app).await?;
+    if state.config.tls.enabled {
+        let tls = &state.config.tls;
+        let rustls_config = axum_server::tls_rustls::RustlsConfig::from_pem_file(
+            &tls.cert_path,
+            &tls.key_path,
+        )
+        .await
+        .with_context(|| {
+            format!(
+                "loading TLS cert {} and key {}",
+                tls.cert_path.display(),
+                tls.key_path.display()
+            )
+        })?;
+        info!(listen=%state.config.listen, websocket_path=%base, auth=state.config.auth.enabled, tls=true, "Brew server listening (TLS)");
+        axum_server::bind_rustls(state.config.listen, rustls_config)
+            .serve(app.into_make_service())
+            .await?;
+    } else {
+        let listener = tokio::net::TcpListener::bind(state.config.listen).await?;
+        info!(listen=%state.config.listen, websocket_path=%base, auth=state.config.auth.enabled, tls=false, "Brew server listening");
+        axum::serve(listener, app).await?;
+    }
     Ok(())
 }
 
