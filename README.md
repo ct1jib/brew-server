@@ -4,6 +4,10 @@ Experimental Rust Brew core for linking two or more MidnightBlue BlueStation or 
 
 Reference spec from https://wiki.tetrapack.online/tetra/specifications/brew/
 
+Version 0.3 adds:
+
+- TLS Support for https:// and wss://
+
 Version 0.2 adds:
 
 - HTTP Digest authentication compatible with BlueStation's current WebSocket transport (MD5 + qop=auth).
