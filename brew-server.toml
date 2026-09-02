@@ -7,6 +7,11 @@ allow_multiple_calls_per_group = false
 higher_priority_number_wins = true
 preempt_cause = 1
 
+[tls]
+enabled = false
+cert_path = "/etc/brew-server/tls/cert.pem"
+key_path = "/etc/brew-server/tls/key.pem"
+
 [auth]
 enabled = true
 realm = "brew-server"

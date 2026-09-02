@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use serde::Deserialize;
-use std::{collections::HashMap, fs, net::SocketAddr, path::Path};
+use std::{collections::HashMap, fs, net::SocketAddr, path::Path, path::PathBuf};
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
@@ -14,6 +14,25 @@ pub struct Config {
     pub higher_priority_number_wins: bool,
     pub preempt_cause: u8,
     pub auth: AuthConfig,
+    pub tls: TlsConfig,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
+pub struct TlsConfig {
+    pub enabled: bool,
+    pub cert_path: PathBuf,
+    pub key_path: PathBuf,
+}
+
+impl Default for TlsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            cert_path: PathBuf::from("cert.pem"),
+            key_path: PathBuf::from("key.pem"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -48,6 +67,7 @@ impl Default for Config {
             higher_priority_number_wins: true,
             preempt_cause: 1,
             auth: AuthConfig::default(),
+            tls: TlsConfig::default(),
         }
     }
 }
