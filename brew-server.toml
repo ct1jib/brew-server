@@ -1,16 +1,16 @@
 listen = "0.0.0.0:9000"
 websocket_path = "/brew"
 websocket_subprotocol = "brew"
-route_without_affiliations = false
+route_without_affiliations = true
 fallback_broadcast_when_no_affiliations = true
-allow_multiple_calls_per_group = false
+allow_multiple_calls_per_group = true
 higher_priority_number_wins = true
 preempt_cause = 1
 
 [tls]
 enabled = false
-cert_path = "/etc/brew-server/tls/cert.pem"
-key_path = "/etc/brew-server/tls/key.pem"
+cert_path = "/etc/letsencrypt/live/ct1jib.dyndns.org/fullchain.pem"
+key_path = "/etc/letsencrypt/live/ct1jib.dyndns.org/privkey.pem"
 
 [auth]
 enabled = true
