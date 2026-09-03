@@ -17,6 +17,30 @@ enabled = true
 realm = "brew-server"
 session_ttl_seconds = 300
 
+[aprs]
+enabled = true
+
+# GSSI/TG used as the APRS gateway destination
+talkgroup = 200999
+
+# APRS-IS server
+server = "portugal.aprs2.net"
+port = 14580
+
+# APRS-IS login of the gateway
+login_callsign = "CT1JIB"
+passcode = -1
+
+# Existing radio-ID database. Only radio_id, callsign and fname are read.
+users_file = "/etc/brew-server/users.json"
+
+# APRS symbol: /> = car
+symbol_table = "/"
+symbol = ">"
+
+reconnect_seconds = 15
+users_reload_seconds = 60
+
 [auth.users]
 "100000001" = "change-me-bs1"
 "100000002" = "change-me-bs2"
