@@ -57,22 +57,24 @@ impl Default for AuthConfig {
     }
 }
 
-// Telemetry and Control both ride the main `listen`/`tls` WebSocket
-// listener at `/` (FlowStation hardcodes that path for both, non-
-// configurably) and are told apart by the Sec-WebSocket-Protocol they
-// offer, so they only need their own enabled flag and Basic Auth users.
-
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
 pub struct TelemetryConfig {
     pub enabled: bool,
+    pub listen: SocketAddr,
     /// HTTP Basic Auth username -> password. Empty means no auth required.
     pub users: HashMap<String, String>,
+    pub tls: TlsConfig,
 }
 
 impl Default for TelemetryConfig {
     fn default() -> Self {
-        Self { enabled: false, users: HashMap::new() }
+        Self {
+            enabled: false,
+            listen: "0.0.0.0:9001".parse().unwrap(),
+            users: HashMap::new(),
+            tls: TlsConfig::default(),
+        }
     }
 }
 
@@ -80,13 +82,20 @@ impl Default for TelemetryConfig {
 #[serde(default)]
 pub struct ControlConfig {
     pub enabled: bool,
+    pub listen: SocketAddr,
     /// HTTP Basic Auth username -> password. Empty means no auth required.
     pub users: HashMap<String, String>,
+    pub tls: TlsConfig,
 }
 
 impl Default for ControlConfig {
     fn default() -> Self {
-        Self { enabled: false, users: HashMap::new() }
+        Self {
+            enabled: false,
+            listen: "0.0.0.0:9002".parse().unwrap(),
+            users: HashMap::new(),
+            tls: TlsConfig::default(),
+        }
     }
 }
 
