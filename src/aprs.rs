@@ -300,8 +300,10 @@ async fn aprs_worker(config: AprsConfig, mut rx: mpsc::UnboundedReceiver<String>
                 });
 
                 let login = format!(
-                    "user {} pass {} vers brew-server-aprs 0.2\r\n",
-                    config.login_callsign, config.passcode
+                    "user {} pass {} vers brew-server-aprs {}\r\n",
+                    config.login_callsign,
+                    config.passcode,
+                    env!("CARGO_PKG_VERSION")
                 );
 
                 if let Err(e) = write_half.write_all(login.as_bytes()).await {
