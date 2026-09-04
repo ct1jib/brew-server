@@ -28,6 +28,9 @@ pub async fn run(state: Arc<AppState>) -> anyhow::Result<()> {
         .route("/", get(dashboard::index))
         .route("/api/status", get(dashboard::snapshot))
         .route("/api/live", get(dashboard::live))
+        .route("/api/telemetry", get(dashboard::telemetry_snapshot))
+        .route("/api/control", get(dashboard::control_list))
+        .route("/api/control/{id}", axum::routing::post(dashboard::control_command))
         .with_state(state.clone());
 
     if state.config.tls.enabled {

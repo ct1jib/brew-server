@@ -15,6 +15,8 @@ pub struct Config {
     pub preempt_cause: u8,
     pub auth: AuthConfig,
     pub tls: TlsConfig,
+    pub telemetry: TelemetryConfig,
+    pub control: ControlConfig,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -55,6 +57,48 @@ impl Default for AuthConfig {
     }
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
+pub struct TelemetryConfig {
+    pub enabled: bool,
+    pub listen: SocketAddr,
+    /// HTTP Basic Auth username -> password. Empty means no auth required.
+    pub users: HashMap<String, String>,
+    pub tls: TlsConfig,
+}
+
+impl Default for TelemetryConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            listen: "0.0.0.0:9001".parse().unwrap(),
+            users: HashMap::new(),
+            tls: TlsConfig::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
+pub struct ControlConfig {
+    pub enabled: bool,
+    pub listen: SocketAddr,
+    /// HTTP Basic Auth username -> password. Empty means no auth required.
+    pub users: HashMap<String, String>,
+    pub tls: TlsConfig,
+}
+
+impl Default for ControlConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            listen: "0.0.0.0:9002".parse().unwrap(),
+            users: HashMap::new(),
+            tls: TlsConfig::default(),
+        }
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -68,6 +112,8 @@ impl Default for Config {
             preempt_cause: 1,
             auth: AuthConfig::default(),
             tls: TlsConfig::default(),
+            telemetry: TelemetryConfig::default(),
+            control: ControlConfig::default(),
         }
     }
 }

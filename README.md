@@ -4,6 +4,15 @@ Experimental Rust Brew core for linking two or more MidnightBlue BlueStation or 
 
 Reference spec from https://wiki.tetrapack.online/tetra/specifications/brew/
 
+Version 0.4 adds:
+
+- Optional FlowStation Telemetry ingestion channel (registrations, calls with
+  carrier/timeslot, RF/DSP quality, SDR/host health, SDS log, emergency alarms),
+  surfaced on the dashboard with an emergency-alarm banner.
+- Optional FlowStation Control channel (Kick MS, DGNA assign/deassign, live SDS
+  add/delete/clear, clear emergency, restart/stop the service), with a per-station
+  command panel on the dashboard.
+
 Version 0.3 adds:
 
 - TLS Support for https:// and wss://
@@ -163,6 +172,74 @@ logging for BlueStation's Brew entity/worker and look for `forwarding local call
 TetraPack` / `sent GROUP_TX`. SDS also requires BlueStation's Brew SDS feature to be
 enabled; otherwise BlueStation intentionally ignores `SendSds`.
 
+## FlowStation Telemetry (experimental)
+
+In addition to the Brew link, FlowStation-based BlueStations can optionally push a
+one-way **Telemetry** stream (registrations, calls with carrier/timeslot, RF/DSP
+quality, SDR/host health, SDS log, emergency alarms) over a second, BTS-initiated
+WebSocket. This is a separate listener from Brew because the handshake shape
+differs: single-step upgrade at `/` (no Digest challenge), optional HTTP **Basic**
+auth, and a required `Sec-WebSocket-Protocol: bluestation-telemetry-v2` echo.
+
+Enable it in `brew-server.toml`:
+
+```toml
+[telemetry]
+enabled = true
+listen = "0.0.0.0:9001"
+
+[telemetry.users]
+"100000001" = "change-me-telemetry1"
+
+[telemetry.tls]
+enabled = false
+```
+
+Leave `[telemetry.users]` empty to accept connections without auth. Point each
+FlowStation BlueStation's `[telemetry]` config section at
+`ws://<this server>:9001/` (or `wss://` with `telemetry.tls.enabled = true`).
+
+Connected stations, their health, active calls (with carrier + timeslot), RF
+quality, and telemetry-sourced SDS traffic appear on the dashboard below.
+Active emergency alarms are surfaced as a banner at the top of the page.
+
+Reverse-engineered from FlowStation v0.4.0 source, not a published spec —
+re-verify against whatever FlowStation version you actually deploy.
+
+## FlowStation Control (experimental)
+
+The **Control** channel is the bidirectional counterpart to Telemetry: the BTS
+still initiates the WebSocket connection (subprotocol `bluestation-control-v1`),
+but once connected an operator can push commands down it (kick a subscriber,
+DGNA assign/deassign, inject/manage live SDS, clear an emergency, restart or
+stop the BlueStation service) and read back responses for the few command
+types that define one (`SendSds`, `CommandA`, `KickMs`).
+
+Enable it in `brew-server.toml`:
+
+```toml
+[control]
+enabled = true
+listen = "0.0.0.0:9002"
+
+[control.users]
+"100000001" = "change-me-control1"
+
+[control.tls]
+enabled = false
+```
+
+Point each FlowStation BlueStation's `[command]` config section at
+`ws://<this server>:9002/`. Connected control-capable stations appear on the
+dashboard with a command panel: Kick MS, DGNA assign/deassign, Clear
+Emergency, live-SDS add/delete/clear, and Restart/Shutdown (both ask for
+confirmation client-side, since they end the BTS process). `SendSds` /
+`SendRawSdsType4` / `TestCmdB` take a raw hex-encoded payload — this server
+does not encode SDS-TL PDUs for you.
+
+Like Telemetry, this is reverse-engineered from FlowStation v0.4.0 source;
+re-verify against your deployed version.
+
 ## Web monitoring dashboard (v1)
 
 This build includes a zero-setup live dashboard on the same HTTP listener as Brew.
@@ -170,11 +247,18 @@ This build includes a zero-setup live dashboard on the same HTTP listener as Bre
 - Dashboard: `http://<server>:9000/`
 - JSON snapshot: `/api/status`
 - Live event WebSocket: `/api/live`
+- FlowStation telemetry snapshot: `/api/telemetry` (empty unless the `[telemetry]`
+  listener is enabled)
+- FlowStation control: `/api/control` (connected station IDs) and
+  `/api/control/{id}` (POST a command; empty/404 unless `[control]` is enabled)
 - Existing Brew endpoint remains unchanged (normally `/brew`).
 
 The dashboard shows connected BlueStations, registered subscribers, groups, active and
 recent group/private calls, call durations/voice-frame counts, and recent SDS traffic.
-Counters/history are currently in-memory and reset when the server restarts.
-
-True RF TS1-TS4 utilization is intentionally not guessed from Brew traffic; that is the
-next phase and requires a small telemetry feed from BlueStation.
+When the FlowStation Telemetry channel is enabled, it also shows per-station health,
+active calls with **carrier + timeslot**, RF quality, telemetry-sourced SDS traffic, and
+an emergency-alarm banner — see "FlowStation Telemetry" above, which is where that
+RF TS1-TS4 / carrier-timeslot data now comes from. When Control is enabled, each
+connected station gets a command panel (Kick MS, DGNA, live SDS, clear emergency,
+restart/shutdown) — see "FlowStation Control" above. Counters/history are currently
+in-memory and reset when the server (or the BTS's telemetry/control connection) restarts.

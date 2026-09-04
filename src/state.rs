@@ -1,4 +1,4 @@
-use crate::{config::Config, monitor::Monitor};
+use crate::{config::Config, control::ControlState, monitor::Monitor, telemetry::TelemetryState};
 use std::{collections::{HashMap, HashSet}, time::{Duration, Instant}};
 use tokio::sync::{mpsc, RwLock};
 use uuid::Uuid;
@@ -57,11 +57,19 @@ pub struct AppState {
     pub config: Config,
     pub inner: RwLock<Inner>,
     pub monitor: Monitor,
+    pub telemetry: RwLock<TelemetryState>,
+    pub control: RwLock<ControlState>,
 }
 
 impl AppState {
     pub fn new(config: Config) -> Self {
-        Self { config, inner: RwLock::new(Inner::default()), monitor: Monitor::new() }
+        Self {
+            config,
+            inner: RwLock::new(Inner::default()),
+            monitor: Monitor::new(),
+            telemetry: RwLock::new(TelemetryState::default()),
+            control: RwLock::new(ControlState::default()),
+        }
     }
 
     pub async fn send_many(&self, clients: &HashSet<ClientId>, packet: &[u8]) {
