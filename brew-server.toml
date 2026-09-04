@@ -28,7 +28,7 @@ server = "portugal.aprs2.net"
 port = 14580
 
 # APRS-IS login of the gateway
-login_callsign = "CT1JIB"
+login_callsign = "xxxxxx"
 passcode = -1
 
 # Existing radio-ID database. Only radio_id, callsign and fname are read.
@@ -36,7 +36,7 @@ users_file = "/etc/brew-server/users.json"
 
 # APRS symbol: /> = car
 symbol_table = "/"
-symbol = ">"
+symbol = "["
 
 reconnect_seconds = 15
 users_reload_seconds = 60
