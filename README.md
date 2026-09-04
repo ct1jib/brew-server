@@ -1,10 +1,10 @@
 # brew-server
 
-Experimental Rust Brew core for linking two or more MidnightBlue BlueStation or Flowstation TETRA base stations.
+Experimental Rust Brew core for linking two or more MidnightBlue BlueStation or Flowstation TETRA base stations and TetraLink app.
 
 Reference spec from https://wiki.tetrapack.online/tetra/specifications/brew/
 
-Version 0.3 adds:
+Version 0.3.1 adds:
 
 - TLS Support for https:// and wss://
 
@@ -45,22 +45,47 @@ curl http://127.0.0.1:9000/healthz
 
 ```toml
 listen = "0.0.0.0:9000"
-websocket_path = "/brew/"
+websocket_path = "/brew"
 websocket_subprotocol = "brew"
 route_without_affiliations = true
+fallback_broadcast_when_no_affiliations = true
 allow_multiple_calls_per_group = true
 higher_priority_number_wins = true
 preempt_cause = 1
 
 [tls]
-enabled = false
-cert_path = "/etc/brew-server/tls/cert.pem"
-key_path = "/etc/brew-server/tls/key.pem"
+enabled = true
+cert_path = "/etc/letsencrypt/live/<domain>/fullchain.pem"
+key_path = "/etc/letsencrypt/live/<domain>/privkey.pem"
 
 [auth]
 enabled = true
 realm = "brew-server"
 session_ttl_seconds = 300
+
+[aprs]
+enabled = true
+
+# GSSI/TG used as the APRS gateway destination
+talkgroup = 200999
+
+# APRS-IS server
+server = "rotate.aprs2.net"
+port = 14580
+
+# APRS-IS login of the gateway
+login_callsign = "xxxxxxx"
+passcode = -1
+
+# Existing radio-ID database. Only radio_id, callsign and fname are read.
+users_file = "/etc/brew-server/users.json"
+
+# APRS symbol: /> = human
+symbol_table = "/"
+symbol = "["
+
+reconnect_seconds = 15
+users_reload_seconds = 3600
 
 [auth.users]
 "100000001" = "change-me-bs1"
@@ -76,8 +101,8 @@ Brew can terminate TLS natively so BlueStations connect over `wss://` / `https:/
 ```toml
 [tls]
 enabled = true
-cert_path = "/etc/brew-server/tls/cert.pem"
-key_path = "/etc/brew-server/tls/key.pem"
+cert_path = "/etc/letsencrypt/live/<domain>/fullchain.pem"
+key_path = "/etc/letsencrypt/live/<domain>/privkey.pem"
 ```
 
 `cert_path` is a PEM certificate chain (leaf first, then any intermediates) and `key_path` is the matching PEM private key (PKCS#8 or RSA). When `enabled = true` the listener serves HTTPS on the same `listen` address, so clients, the discovery GET, session WebSockets, and the dashboard all move to `https://`/`wss://`.
