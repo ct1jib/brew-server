@@ -1,4 +1,4 @@
-use crate::{dashboard, router, state::{AppState, Client}};
+use crate::{control, dashboard, fsnet, router, state::{AppState, Client}, telemetry};
 use anyhow::Context;
 use axum::{
     extract::{
@@ -25,7 +25,7 @@ pub async fn run(state: Arc<AppState>) -> anyhow::Result<()> {
     let app = app
         .route(&session_route, get(brew_session_endpoint))
         .route("/healthz", get(|| async { "ok\n" }))
-        .route("/", get(dashboard::index))
+        .route("/", get(root_handler))
         .route("/api/status", get(dashboard::snapshot))
         .route("/api/live", get(dashboard::live))
         .route("/api/telemetry", get(dashboard::telemetry_snapshot))
@@ -63,6 +63,39 @@ fn normalized_path(path: &str) -> String {
     let mut p = if path.starts_with('/') { path.to_string() } else { format!("/{path}") };
     while p.len() > 1 && p.ends_with('/') { p.pop(); }
     p
+}
+
+/// Serves the dashboard to plain browser GETs, and dispatches WebSocket
+/// upgrades at `/` to the Telemetry or Control channel by the
+/// Sec-WebSocket-Protocol the BTS offers -- FlowStation hardcodes this path
+/// for both, so they can't be told apart by path the way Brew's own
+/// (Digest-challenged, configurable-path) WebSocket is.
+async fn root_handler(State(state): State<Arc<AppState>>, request: Request<axum::body::Body>) -> Response {
+    let (mut parts, _body) = request.into_parts();
+    let is_upgrade = parts.headers.get(header::UPGRADE).and_then(|v| v.to_str().ok())
+        .map(|v| v.eq_ignore_ascii_case("websocket")).unwrap_or(false);
+    if !is_upgrade {
+        return dashboard::index().await.into_response();
+    }
+
+    if fsnet::offers_subprotocol(&parts, "bluestation-telemetry-v2") {
+        if !state.config.telemetry.enabled { return StatusCode::NOT_FOUND.into_response(); }
+        let state2 = state.clone();
+        return fsnet::upgrade(&state.config.telemetry.users, "bluestation-telemetry-v2", &mut parts, move |socket, identity| async move {
+            telemetry::session(state2, socket, identity).await
+        }).await;
+    }
+    if fsnet::offers_subprotocol(&parts, "bluestation-control-v1") {
+        if !state.config.control.enabled { return StatusCode::NOT_FOUND.into_response(); }
+        let state2 = state.clone();
+        return fsnet::upgrade(&state.config.control.users, "bluestation-control-v1", &mut parts, move |socket, identity| async move {
+            control::session(state2, socket, identity).await
+        }).await;
+    }
+
+    let offered = parts.headers.get(header::SEC_WEBSOCKET_PROTOCOL).and_then(|v| v.to_str().ok()).unwrap_or_default();
+    warn!(offered, "WebSocket upgrade at / with unrecognized subprotocol, rejecting");
+    (StatusCode::BAD_REQUEST, "unrecognized Sec-WebSocket-Protocol at /").into_response()
 }
 
 async fn brew_discovery(State(state): State<Arc<AppState>>, request: Request<axum::body::Body>) -> Response {

@@ -177,27 +177,27 @@ enabled; otherwise BlueStation intentionally ignores `SendSds`.
 In addition to the Brew link, FlowStation-based BlueStations can optionally push a
 one-way **Telemetry** stream (registrations, calls with carrier/timeslot, RF/DSP
 quality, SDR/host health, SDS log, emergency alarms) over a second, BTS-initiated
-WebSocket. This is a separate listener from Brew because the handshake shape
-differs: single-step upgrade at `/` (no Digest challenge), optional HTTP **Basic**
-auth, and a required `Sec-WebSocket-Protocol: bluestation-telemetry-v2` echo.
+WebSocket. FlowStation hardcodes the request path to `/` for this (not
+configurable, and not the same handshake as Brew's Digest challenge), so it
+shares the main `listen`/`tls` listener and is told apart from a browser loading
+the dashboard, and from the Control channel below, by the
+`Sec-WebSocket-Protocol: bluestation-telemetry-v2` it offers — a required
+echo-or-abort header on FlowStation's side.
 
 Enable it in `brew-server.toml`:
 
 ```toml
 [telemetry]
 enabled = true
-listen = "0.0.0.0:9001"
 
 [telemetry.users]
 "100000001" = "change-me-telemetry1"
-
-[telemetry.tls]
-enabled = false
 ```
 
-Leave `[telemetry.users]` empty to accept connections without auth. Point each
-FlowStation BlueStation's `[telemetry]` config section at
-`ws://<this server>:9001/` (or `wss://` with `telemetry.tls.enabled = true`).
+Leave `[telemetry.users]` empty to accept connections without auth (HTTP
+**Basic**, optional). Point each FlowStation BlueStation's `[telemetry]` config
+section at `ws://<this server>:9000/` (or `wss://` when `[tls]` is enabled) —
+the same host/port as Brew and the dashboard.
 
 Connected stations, their health, active calls (with carrier + timeslot), RF
 quality, and telemetry-sourced SDS traffic appear on the dashboard below.
@@ -209,28 +209,26 @@ re-verify against whatever FlowStation version you actually deploy.
 ## FlowStation Control (experimental)
 
 The **Control** channel is the bidirectional counterpart to Telemetry: the BTS
-still initiates the WebSocket connection (subprotocol `bluestation-control-v1`),
-but once connected an operator can push commands down it (kick a subscriber,
-DGNA assign/deassign, inject/manage live SDS, clear an emergency, restart or
-stop the BlueStation service) and read back responses for the few command
-types that define one (`SendSds`, `CommandA`, `KickMs`).
+still initiates the WebSocket connection, this time offering
+`Sec-WebSocket-Protocol: bluestation-control-v1`, and — like Telemetry — shares
+the main listener rather than a port of its own. Once connected, an operator
+can push commands down it (kick a subscriber, DGNA assign/deassign,
+inject/manage live SDS, clear an emergency, restart or stop the BlueStation
+service) and read back responses for the few command types that define one
+(`SendSds`, `CommandA`, `KickMs`).
 
 Enable it in `brew-server.toml`:
 
 ```toml
 [control]
 enabled = true
-listen = "0.0.0.0:9002"
 
 [control.users]
 "100000001" = "change-me-control1"
-
-[control.tls]
-enabled = false
 ```
 
 Point each FlowStation BlueStation's `[command]` config section at
-`ws://<this server>:9002/`. Connected control-capable stations appear on the
+`ws://<this server>:9000/`. Connected control-capable stations appear on the
 dashboard with a command panel: Kick MS, DGNA assign/deassign, Clear
 Emergency, live-SDS add/delete/clear, and Restart/Shutdown (both ask for
 confirmation client-side, since they end the BTS process). `SendSds` /

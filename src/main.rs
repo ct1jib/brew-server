@@ -22,12 +22,5 @@ async fn main() -> anyhow::Result<()> {
 
     let path = std::env::args().nth(1).unwrap_or_else(|| "brew-server.toml".to_owned());
     let config = Config::load(&path)?;
-    let state = Arc::new(AppState::new(config));
-
-    tokio::try_join!(
-        server::run(state.clone()),
-        telemetry::run(state.clone()),
-        control::run(state.clone()),
-    )?;
-    Ok(())
+    server::run(Arc::new(AppState::new(config))).await
 }

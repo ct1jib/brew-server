@@ -2,7 +2,7 @@
 //! (subprotocol `bluestation-control-v1`) that a control server uses to push
 //! commands (kick, DGNA, live SDS, emergency clear, restart/shutdown) and
 //! read back responses for the few command types that define one.
-use crate::{fsnet, state::AppState};
+use crate::state::AppState;
 use axum::extract::ws::{Message, WebSocket};
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
@@ -142,25 +142,7 @@ pub async fn send_command(state: &Arc<AppState>, bts_id: &str, mut command: Cont
     }
 }
 
-pub async fn run(state: Arc<AppState>) -> anyhow::Result<()> {
-    if !state.config.control.enabled {
-        return Ok(());
-    }
-    let cfg = fsnet::ListenerConfig {
-        name: "control",
-        listen: state.config.control.listen,
-        subprotocol: "bluestation-control-v1",
-        users: state.config.control.users.clone(),
-        tls: state.config.control.tls.clone(),
-    };
-    fsnet::serve(cfg, move |socket, identity| {
-        let state = state.clone();
-        async move { session(state, socket, identity).await }
-    })
-    .await
-}
-
-async fn session(state: Arc<AppState>, socket: WebSocket, identity: Option<String>) {
+pub async fn session(state: Arc<AppState>, socket: WebSocket, identity: Option<String>) {
     let id = identity.unwrap_or_else(|| format!("control-{}", uuid::Uuid::new_v4().simple()));
     let (mut ws_tx, mut ws_rx) = socket.split();
     let (tx, mut rx) = mpsc::unbounded_channel::<Vec<u8>>();

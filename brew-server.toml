@@ -22,26 +22,20 @@ session_ttl_seconds = 300
 "100000002" = "change-me-bs2"
 
 # Optional: FlowStation's outbound Telemetry channel (BTS -> this server).
-# Off by default. See README.md "FlowStation Telemetry" for details.
+# Shares `listen`/`tls` above -- told apart from Control and the dashboard by
+# the WebSocket subprotocol the BTS offers at "/". Off by default. See
+# README.md "FlowStation Telemetry" for details.
 [telemetry]
 enabled = false
-listen = "0.0.0.0:9001"
 
 [telemetry.users]
 # "100000001" = "change-me-telemetry1"
 
-[telemetry.tls]
-enabled = false
-
 # Optional: FlowStation's inbound Control channel (BTS -> this server, commands
-# pushed back down the same connection). Off by default. See README.md
-# "FlowStation Control" for details.
+# pushed back down the same connection). Also shares `listen`/`tls` above.
+# Off by default. See README.md "FlowStation Control" for details.
 [control]
 enabled = false
-listen = "0.0.0.0:9002"
 
 [control.users]
 # "100000001" = "change-me-control1"
-
-[control.tls]
-enabled = false

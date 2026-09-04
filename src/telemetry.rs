@@ -1,7 +1,7 @@
 //! FlowStation Telemetry channel: one-way BTS -> collector push of live
 //! station state over a BTS-initiated WebSocket (subprotocol
 //! `bluestation-telemetry-v2`). See flowstation-telemetry-control-api.md.
-use crate::{fsnet, state::AppState};
+use crate::state::AppState;
 use axum::extract::ws::{Message, WebSocket};
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
@@ -248,25 +248,7 @@ impl TelemetryState {
     }
 }
 
-pub async fn run(state: Arc<AppState>) -> anyhow::Result<()> {
-    if !state.config.telemetry.enabled {
-        return Ok(());
-    }
-    let cfg = fsnet::ListenerConfig {
-        name: "telemetry",
-        listen: state.config.telemetry.listen,
-        subprotocol: "bluestation-telemetry-v2",
-        users: state.config.telemetry.users.clone(),
-        tls: state.config.telemetry.tls.clone(),
-    };
-    fsnet::serve(cfg, move |socket, identity| {
-        let state = state.clone();
-        async move { session(state, socket, identity).await }
-    })
-    .await
-}
-
-async fn session(state: Arc<AppState>, socket: WebSocket, identity: Option<String>) {
+pub async fn session(state: Arc<AppState>, socket: WebSocket, identity: Option<String>) {
     let id = identity.unwrap_or_else(|| format!("telemetry-{}", uuid::Uuid::new_v4().simple()));
     {
         let mut t = state.telemetry.write().await;
