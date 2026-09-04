@@ -1,10 +1,12 @@
 mod config;
 mod dashboard;
+mod fsnet;
 mod monitor;
 mod protocol;
 mod router;
 mod server;
 mod state;
+mod telemetry;
 
 use config::Config;
 use state::AppState;
@@ -19,5 +21,11 @@ async fn main() -> anyhow::Result<()> {
 
     let path = std::env::args().nth(1).unwrap_or_else(|| "brew-server.toml".to_owned());
     let config = Config::load(&path)?;
-    server::run(Arc::new(AppState::new(config))).await
+    let state = Arc::new(AppState::new(config));
+
+    tokio::try_join!(
+        server::run(state.clone()),
+        telemetry::run(state.clone()),
+    )?;
+    Ok(())
 }

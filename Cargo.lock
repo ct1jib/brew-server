@@ -166,6 +166,7 @@ dependencies = [
  "anyhow",
  "axum",
  "axum-server",
+ "base64",
  "futures-util",
  "md5",
  "serde",
