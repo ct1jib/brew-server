@@ -4,6 +4,15 @@ Experimental Rust Brew core for linking two or more MidnightBlue BlueStation or 
 
 Reference spec from https://wiki.tetrapack.online/tetra/specifications/brew/
 
+Version 0.4 adds:
+
+- Optional FlowStation Telemetry ingestion channel (registrations, calls with
+  carrier/timeslot, RF/DSP quality, SDR/host health, SDS log, emergency alarms),
+  surfaced on the dashboard with an emergency-alarm banner.
+- Optional FlowStation Control channel (Kick MS, DGNA assign/deassign, live SDS
+  add/delete/clear, clear emergency, restart/stop the service), with a per-station
+  command panel on the dashboard.
+
 Version 0.3 adds:
 
 - TLS Support for https:// and wss://
@@ -238,11 +247,18 @@ This build includes a zero-setup live dashboard on the same HTTP listener as Bre
 - Dashboard: `http://<server>:9000/`
 - JSON snapshot: `/api/status`
 - Live event WebSocket: `/api/live`
+- FlowStation telemetry snapshot: `/api/telemetry` (empty unless the `[telemetry]`
+  listener is enabled)
+- FlowStation control: `/api/control` (connected station IDs) and
+  `/api/control/{id}` (POST a command; empty/404 unless `[control]` is enabled)
 - Existing Brew endpoint remains unchanged (normally `/brew`).
 
 The dashboard shows connected BlueStations, registered subscribers, groups, active and
 recent group/private calls, call durations/voice-frame counts, and recent SDS traffic.
-Counters/history are currently in-memory and reset when the server restarts.
-
-True RF TS1-TS4 utilization is intentionally not guessed from Brew traffic; that is the
-next phase and requires a small telemetry feed from BlueStation.
+When the FlowStation Telemetry channel is enabled, it also shows per-station health,
+active calls with **carrier + timeslot**, RF quality, telemetry-sourced SDS traffic, and
+an emergency-alarm banner — see "FlowStation Telemetry" above, which is where that
+RF TS1-TS4 / carrier-timeslot data now comes from. When Control is enabled, each
+connected station gets a command panel (Kick MS, DGNA, live SDS, clear emergency,
+restart/shutdown) — see "FlowStation Control" above. Counters/history are currently
+in-memory and reset when the server (or the BTS's telemetry/control connection) restarts.
