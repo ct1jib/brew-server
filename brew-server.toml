@@ -9,8 +9,8 @@ preempt_cause = 1
 
 [tls]
 enabled = false
-cert_path = "/etc/letsencrypt/live/ct1jib.dyndns.org/fullchain.pem"
-key_path = "/etc/letsencrypt/live/ct1jib.dyndns.org/privkey.pem"
+cert_path = "/etc/letsencrypt/live/<domain>/fullchain.pem"
+key_path = "/etc/letsencrypt/live/<domain>/privkey.pem"
 
 [auth]
 enabled = true
