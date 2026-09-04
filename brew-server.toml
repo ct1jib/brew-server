@@ -39,7 +39,7 @@ symbol_table = "/"
 symbol = "["
 
 reconnect_seconds = 15
-users_reload_seconds = 60
+users_reload_seconds = 3600
 
 [auth.users]
 "100000001" = "change-me-bs1"
