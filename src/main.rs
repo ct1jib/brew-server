@@ -1,4 +1,5 @@
 mod config;
+mod control;
 mod dashboard;
 mod fsnet;
 mod monitor;
@@ -26,6 +27,7 @@ async fn main() -> anyhow::Result<()> {
     tokio::try_join!(
         server::run(state.clone()),
         telemetry::run(state.clone()),
+        control::run(state.clone()),
     )?;
     Ok(())
 }

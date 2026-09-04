@@ -1,4 +1,4 @@
-use crate::{config::Config, monitor::Monitor, telemetry::TelemetryState};
+use crate::{config::Config, control::ControlState, monitor::Monitor, telemetry::TelemetryState};
 use std::{collections::{HashMap, HashSet}, time::{Duration, Instant}};
 use tokio::sync::{mpsc, RwLock};
 use uuid::Uuid;
@@ -58,6 +58,7 @@ pub struct AppState {
     pub inner: RwLock<Inner>,
     pub monitor: Monitor,
     pub telemetry: RwLock<TelemetryState>,
+    pub control: RwLock<ControlState>,
 }
 
 impl AppState {
@@ -67,6 +68,7 @@ impl AppState {
             inner: RwLock::new(Inner::default()),
             monitor: Monitor::new(),
             telemetry: RwLock::new(TelemetryState::default()),
+            control: RwLock::new(ControlState::default()),
         }
     }
 
